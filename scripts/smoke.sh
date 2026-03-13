@@ -2,8 +2,19 @@
 set -euo pipefail
 
 BASE_URL="${1:-http://127.0.0.1:8080}"
-EMAIL="smoke-$(date +%s)@example.com"
 PASSWORD="Password123"
+
+unique_id() {
+  if command -v uuidgen >/dev/null 2>&1; then
+    uuidgen | tr '[:upper:]' '[:lower:]'
+    return
+  fi
+
+  printf '%s-%s-%s\n' "$(date +%s)" "$$" "${RANDOM:-0}"
+}
+
+RUN_ID="$(unique_id)"
+EMAIL="smoke-${RUN_ID}@example.com"
 
 wait_for_app() {
   local url="$1"
@@ -69,7 +80,7 @@ if [[ -z "${order_id}" || -z "${amount}" ]]; then
 fi
 
 pay_body=$(cat <<JSON
-{"orderId":${order_id},"transactionId":"smoke-tx-${order_id}","paidAmount":${amount}}
+{"orderId":${order_id},"transactionId":"smoke-tx-${RUN_ID}-${order_id}","paidAmount":${amount}}
 JSON
 )
 curl -fsS -X POST "${BASE_URL}/api/v1/payments/mock-callback" \
