@@ -5,7 +5,25 @@ BASE_URL="${1:-http://127.0.0.1:8080}"
 EMAIL="mq-smoke-$(date +%s)@example.com"
 PASSWORD="Password123"
 
+wait_for_app() {
+  local url="$1"
+  local retries="${2:-60}"
+  local delay_seconds="${3:-1}"
+  local i
+  for i in $(seq 1 "${retries}"); do
+    if curl -fsS "${url}/actuator/health" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep "${delay_seconds}"
+  done
+
+  echo "[mq-smoke] app did not become ready in time: ${url}"
+  exit 1
+}
+
 echo "[mq-smoke] base_url=${BASE_URL}"
+
+wait_for_app "${BASE_URL}"
 
 register_body=$(cat <<JSON
 {"email":"${EMAIL}","password":"${PASSWORD}","nickname":"mq-smoke-user"}
