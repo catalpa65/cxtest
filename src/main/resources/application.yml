@@ -1,0 +1,39 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ecommerce-practice
+  profiles:
+    default: memory
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,loggers,threaddump
+  endpoint:
+    health:
+      show-details: always
+
+app:
+  security:
+    jwt-secret: "replace-this-with-at-least-32-char-secret-key"
+    jwt-expire-seconds: 86400
+  order:
+    expire-seconds: 1800
+  mq:
+    retry-max-attempts: 3
+    retry-delay-millis: 500
+    process-log-retain-size: 300
+  notify:
+    provider: mock
+    order-paid-url: "http://127.0.0.1:8080/api/v1/notify/order-paid"
+    feishu-webhook-url: ""
+    feishu-title: "Payment Succeeded"
+    feishu-env-label: "prod"
+    sign-secret: "replace-notify-sign-secret"
+    connect-timeout-millis: 2000
+    read-timeout-millis: 3000
+    replay-window-seconds: 300
+    replay-cache-max-size: 10000

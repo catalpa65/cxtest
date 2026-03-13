@@ -1,0 +1,10 @@
+target/
+.idea/
+*.iml
+.DS_Store
+logs/
+*.log
+.m2/
+data/
+*.pid
+*.out

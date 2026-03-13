@@ -1,0 +1,84 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecommerce-app
+    environment:
+      SPRING_PROFILES_ACTIVE: "prod"
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/ecommerce?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+      SPRING_DATASOURCE_USERNAME: "root"
+      SPRING_DATASOURCE_PASSWORD: "root"
+      SPRING_DATA_REDIS_HOST: "redis"
+      SPRING_DATA_REDIS_PORT: "6379"
+      SPRING_RABBITMQ_HOST: "rabbitmq"
+      SPRING_RABBITMQ_PORT: "5672"
+      SPRING_RABBITMQ_USERNAME: "guest"
+      SPRING_RABBITMQ_PASSWORD: "guest"
+      APP_SECURITY_JWT_SECRET: "replace-this-with-at-least-32-char-secret-key"
+      APP_SECURITY_JWT_EXPIRE_SECONDS: "86400"
+      APP_ORDER_EXPIRE_SECONDS: "1800"
+      APP_MQ_RETRY_MAX_ATTEMPTS: "3"
+      APP_MQ_RETRY_DELAY_MILLIS: "500"
+      APP_NOTIFY_PROVIDER: "${APP_NOTIFY_PROVIDER:-mock}"
+      APP_NOTIFY_ORDER_PAID_URL: "${APP_NOTIFY_ORDER_PAID_URL:-http://127.0.0.1:8080/api/v1/notify/order-paid}"
+      APP_NOTIFY_FEISHU_WEBHOOK_URL: "${APP_NOTIFY_FEISHU_WEBHOOK_URL:-}"
+      APP_NOTIFY_FEISHU_TITLE: "${APP_NOTIFY_FEISHU_TITLE:-Payment Succeeded}"
+      APP_NOTIFY_FEISHU_ENV_LABEL: "${APP_NOTIFY_FEISHU_ENV_LABEL:-prod}"
+      APP_NOTIFY_SIGN_SECRET: "replace-notify-sign-secret"
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.4.8
+    container_name: ecommerce-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ecommerce
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:8.4
+    container_name: ecommerce-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:4.2.3-management
+    container_name: ecommerce-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ./data/rabbitmq:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
